@@ -5,9 +5,11 @@ A super simple FastAPI application that allows students to view and sign up
 for extracurricular activities at Mergington High School.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
+import json
 import os
 from pathlib import Path
 
@@ -18,6 +20,32 @@ app = FastAPI(title="Mergington High School API",
 current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+def load_teacher_credentials() -> dict:
+    teachers_path = current_dir / "teachers.json"
+    with open(teachers_path, "r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+teacher_credentials = load_teacher_credentials()
+
+
+def is_valid_teacher(username: str, password: str) -> bool:
+    return teacher_credentials.get(username) == password
+
+
+def ensure_teacher_access(username: str | None, password: str | None) -> None:
+    if not username or not password or not is_valid_teacher(username, password):
+        raise HTTPException(
+            status_code=403,
+            detail="Only logged-in teachers can register or unregister students"
+        )
 
 # In-memory activity database
 activities = {
@@ -88,9 +116,24 @@ def get_activities():
     return activities
 
 
+@app.post("/admin/login")
+def teacher_login(payload: LoginRequest):
+    if not is_valid_teacher(payload.username, payload.password):
+        raise HTTPException(status_code=401, detail="Invalid teacher credentials")
+
+    return {"message": "Teacher login successful", "username": payload.username}
+
+
 @app.post("/activities/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str):
+def signup_for_activity(
+    activity_name: str,
+    email: str,
+    x_admin_username: str | None = Header(default=None),
+    x_admin_password: str | None = Header(default=None)
+):
     """Sign up a student for an activity"""
+    ensure_teacher_access(x_admin_username, x_admin_password)
+
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -111,8 +154,15 @@ def signup_for_activity(activity_name: str, email: str):
 
 
 @app.delete("/activities/{activity_name}/unregister")
-def unregister_from_activity(activity_name: str, email: str):
+def unregister_from_activity(
+    activity_name: str,
+    email: str,
+    x_admin_username: str | None = Header(default=None),
+    x_admin_password: str | None = Header(default=None)
+):
     """Unregister a student from an activity"""
+    ensure_teacher_access(x_admin_username, x_admin_password)
+
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
