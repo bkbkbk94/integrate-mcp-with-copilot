@@ -8,6 +8,19 @@
   </head>
   <body>
     <header>
+      <div class="user-menu-wrapper">
+        <button id="user-menu-button" class="icon-button" aria-label="User menu" title="User menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"></path>
+          </svg>
+        </button>
+        <div id="user-menu-panel" class="user-menu-panel hidden">
+          <p id="auth-status">Student view</p>
+          <button id="login-button" type="button">Login as Teacher</button>
+          <button id="logout-button" type="button" class="hidden secondary">Logout</button>
+        </div>
+      </div>
       <h1>Mergington High School</h1>
       <h2>Extracurricular Activities</h2>
     </header>
@@ -23,6 +36,9 @@
 
       <section id="signup-container">
         <h3>Sign Up for an Activity</h3>
+        <p id="admin-required-message" class="info-message">
+          Teacher login is required to register or unregister students.
+        </p>
         <form id="signup-form">
           <div class="form-group">
             <label for="email">Student Email:</label>
@@ -44,6 +60,26 @@
     <footer>
       <p>&copy; 2026 Mergington High School</p>
     </footer>
+
+    <div id="login-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="login-title">
+      <div class="modal-content">
+        <h3 id="login-title">Teacher Login</h3>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="teacher-username">Username:</label>
+            <input type="text" id="teacher-username" required placeholder="teacher username" />
+          </div>
+          <div class="form-group">
+            <label for="teacher-password">Password:</label>
+            <input type="password" id="teacher-password" required placeholder="password" />
+          </div>
+          <div class="modal-actions">
+            <button type="submit">Login</button>
+            <button id="cancel-login" type="button" class="secondary">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <script src="app.js"></script>
   </body>
